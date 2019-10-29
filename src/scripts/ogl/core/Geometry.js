@@ -174,9 +174,9 @@ export class Geometry {
     }
 
     computeBoundingBox(array) {
-
+        
         // Use position buffer if available
-        if (!array && this.attributes.position) array = this.attributes.position.data;
+        if (!array && this.attributes.position0) array = this.attributes.position0.data;
         if (!array) console.warn('No position buffer found to compute bounds');
 
         if (!this.bounds) {
