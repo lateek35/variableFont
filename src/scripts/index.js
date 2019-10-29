@@ -1,7 +1,7 @@
 import TweenMax from "gsap/TweenMax";
 import '../styles/index.scss'
-import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh } from './ogl/Core.js';
-import { Text } from './ogl/Extras.js';
+import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh, Vec2 } from './ogl/Core.js';
+import { Text, Raycast } from './ogl/Extras.js';
 
 let typos = [
     // "4UltraBlack",
@@ -281,51 +281,17 @@ var vertex100;
     `;
 }
 
-
-
-const gl = renderer.gl;
-// APPEND THE CANVAS
-document.body.appendChild(gl.canvas);
-gl.clearColor(0, 0, 0, 1);
-
-const camera = new Camera(gl, {
-    left: 0,
-    right: window.innerWidth,
-    bottom: -window.innerHeight,
-    top: 0
-});
-
-camera.position.z = 10; 
-
 //ON RESIZE FUNCTION
 function resize() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.orthographic({
         near: 0.1,
         far: 1000,
-        left: 0,
-        right: window.innerWidth,
-        bottom: -window.innerHeight,
-        top: 0
+        left: -window.innerWidth / 2,
+        right: window.innerWidth / 2,
+        bottom: -window.innerHeight / 2,
+        top: window.innerHeight / 2,
     });
-}
-resize();
-
-
-// CREATE NEW SCENE
-const scene = new Transform();
-
-//LOAD OUR IMAGE
-loadImages(checkIfDataLoaded);
-loadText().then(checkIfDataLoaded);
-
-function checkIfDataLoaded(){
-    dataLoaded++;
-    if (dataLoaded == 2) {
-        generateShader();
-        createMesh();
-        startApp();
-    }
 }
 
 async function loadImages(cb) {
@@ -407,7 +373,9 @@ function createMesh(){
     mainMesh = new Mesh(gl, { geometry, program });
 
     // Use the height value to position text vertically. Here it is centered.
-    mainMesh.position.set(window.innerWidth/2,0,0);
+    // mainMesh.position.set(window.innerWidth / 2 - 100, window.innerHeight / -2 + 100,0);
+    mainMesh.position.set(188.93, 0, 0);
+    mainMesh.scale.set(0.5,1,1)
     // mesh.setParent(scene);
 
     mainMesh.setParent(scene);
@@ -448,33 +416,69 @@ function update(t) {
 }
 
 
-// const vertex100 =
-//     `precision highp float;
-//     precision highp int;
-//     attribute vec2 uv;
-//     attribute vec3 position;
-//     uniform mat4 modelViewMatrix;
-//     uniform mat4 projectionMatrix;
-//     varying vec2 vUv;
-//     void main() {
-//         vUv = uv;
-        
-//         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-//     }
-// `;
-// const fragment100 =
-//     `#extension GL_OES_standard_derivatives : enable
-//     precision highp float;
-//     precision highp int;
-//     uniform sampler2D tMap;
-//     varying vec2 vUv;
+const gl = renderer.gl;
+// APPEND THE CANVAS
+document.body.appendChild(gl.canvas);
+gl.clearColor(0, 0, 0, 1);
+
+const camera = new Camera(gl, {
+    left: -window.innerWidth / 2,
+    right: window.innerWidth / 2,
+    bottom: -window.innerHeight / 2,
+    top: window.innerHeight / 2,
+});
+
+camera.position.z = 10; 
+
+resize();
+
+
+// CREATE NEW SCENE
+const scene = new Transform();
+
+//LOAD OUR IMAGE
+loadImages(checkIfDataLoaded);
+loadText().then(checkIfDataLoaded);
+
+
+function checkIfDataLoaded() {
+    dataLoaded++;
+    if (dataLoaded == 2) {
+        generateShader();
+        createMesh();
+        startApp();
+        initRaycast();
+    }
+}
+
+function initRaycast() {
+    const mouse = new Vec2();
+    const raycast = new Raycast(gl);
+    const meshes = [mainMesh];
     
-//     void main() {
-//         vec3 tex = texture2D(tMap, vUv).rgb;
-//         float signedDist = max(min(tex.r, tex.g), min(max(tex.r, tex.g), tex.b)) - 0.5;
-//         float d = fwidth(signedDist);
-//         float alpha = smoothstep(-d, d, signedDist);
-//         if (alpha < 0.01) discard;
-//         gl_FragColor.rgb = vec3(0.0);
-//         gl_FragColor.a = alpha;
-//     }`;
+    document.addEventListener('mousemove', move, false);
+    document.addEventListener('touchmove', move, false);
+    
+    function move(e) {
+
+        mouse.set(
+            e.x - ( window.innerWidth/2),
+            -e.y + (window.innerHeight / 2),
+        );
+
+        // Update the ray's origin and direction using the camera and mouse
+        raycast.castMouse(camera, mouse);
+    
+        // Just for the feedback in this example - reset each mesh's hit to false
+        meshes.forEach(mesh => mesh.isHit = false);
+        // raycast.intersectBounds will test against the bounds of each mesh, and 
+        // return an array of intersected meshes in order of closest to farthest
+        const hits = raycast.intersectBounds(meshes);
+        // Update our feedback using this array
+        hits.forEach(mesh => mesh.isHit = true);
+        if( mainMesh.isHit ){
+            console.log('hit test true');
+        }
+    }
+}
+
