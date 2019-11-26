@@ -8,13 +8,13 @@ var Clone = require('clone');
 
 let typos = [
     "4UltraBlack",
-    // "3Black",
+    "4Black",
     "3Bold",
     // "3Semibold",
     // "2Medium",
     "2Regular",
-    // "1Light",
-    "1ExtraLight",
+    "1Light",
+    // "1ExtraLight",
     "0Thin"
 ]
 
