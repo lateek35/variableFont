@@ -19,15 +19,16 @@ var Clone = require('clone');
 // ]
 
 let typos = [
-    "3Black",
-    "3Bold",
-    "3Medium",
-    "3Light",
-    "3ExtraLight",
-    "3Thin",
+    "0",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "6",
 ]
 
-let baseSource = 'public/gotik2/';
+let baseSource = 'public/gotik3/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
@@ -493,7 +494,7 @@ function initRaycast() {
 
 
     // for (let index = 0; index < meshArray.length; index++) {
-    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 0.5, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 1, ease: Power2.easeInOut });
+    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 2, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 1, ease: Power2.easeInOut });
     // }
     
     // function move(e) {
