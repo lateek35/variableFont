@@ -27,7 +27,7 @@ let typos = [
     "3Thin",
 ]
 
-let baseSource = 'public/gotik/';
+let baseSource = 'public/gotik2/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
