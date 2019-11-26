@@ -1,22 +1,40 @@
-import TweenMax from "gsap/TweenMax";
+import TweenMax, { Power0 } from "gsap/TweenMax";
 import '../styles/index.scss'
 import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh, Vec2 } from './ogl/Core.js';
 import { Text, Raycast } from './ogl/Extras.js';
 
+var Clone = require('clone');
+
+
+// let typos = [
+//     "3UltraBlack",
+//     "3Black",
+//     "3Bold",
+//     // "3Semibold",
+//     "3Medium",
+//     // "3Regular",
+//     "3Light",
+//     "3ExtraLight",
+//     "3Thin"
+// ]
+
 let typos = [
-    // "4UltraBlack",
     "3Black",
     "3Bold",
-    // "3Semibold",
     "3Medium",
-    // "2Regular",
-    "3Light",
-    // "3ExtraLight"
-    // "0Thin",
+    "3Regular",
+    "3Thin",
+    "3UltraLight",
 ]
 
+let baseSource = 'public/gta1/';
+let fontSize = 200;
+let lineHeight = 1;
+let lineHeightPos = fontSize * 1;
+let webGL2 = true;
+
 // RETREIVE NUMBER OF VARIATIONS DURING TRANSITION;
-let typosLength = typos.length;
+let typosLength = typos.length; 
 
 // DEFINES ALL COMPUTED VAR FILLDE FOR SHADER CONSTRUCTION
 let imports = '';
@@ -36,8 +54,8 @@ let texts = [];
 let images = [];
 let program;
 let progressTacker = 0;
-let mainMesh;
 let dataLoaded = 0;
+let meshArray;
 
 // ANIMATION VAR
 let time = { val: 0 };
@@ -46,12 +64,14 @@ let time = { val: 0 };
 // INIT THE RENDER
 const renderer = new Renderer({
     dpr: window.devicePixelRatio,
-    webgl: 1
+    webgl: webGL2 ? 2 : 1
 });
 
 
-const shaderIn = renderer.isWebgl2 && false ? 'in' : 'attribute';
-const shaderOut = renderer.isWebgl2 && false ? 'out' : 'varying';
+
+
+const shaderIn = webGL2 ? 'in' : 'attribute';
+const shaderOut = webGL2 ? 'out' : 'varying';
 
 // PRECOMPUTE OUR SHADER VALUE
 for (let index = 0; index < typosLength; index++) {
@@ -62,8 +82,6 @@ for (let index = 0; index < typosLength; index++) {
     imports += `${shaderOut} vec2 vUv${index};
         `;
     vUvs += `vUv${index} = uv${index};
-        `;
-    vUvsIn += `${shaderIn} vec2 vUv${index};
         `;
     indexTarget += `float indexTarget${index} = when_and( when_ge(progress, ${index}.), when_lt(progress, ${index+1}.) );
         `;
@@ -162,7 +180,6 @@ var vertex100;
 
         uniform sampler2D tMapFrom;
         uniform sampler2D tMapTo;
-        ${vUvsIn}
 
         float fill(float sd) {
             float aaf = fwidth(sd);
@@ -174,24 +191,34 @@ var vertex100;
         }
 
         float aastep(float value) {
-            #ifdef GL_OES_standard_derivatives
+            // #ifdef GL_OES_standard_derivatives
                 float afwidth = length(vec2(dFdx(value), dFdy(value))) * 0.70710678118654757;
-            #else
-                float afwidth = (1.0 / 500.0) * (1.4142135623730951 / (2.0 * gl_FragCoord.w));
-            #endif
+            // #else
+            //     float afwidth = (1.0 / 500.0) * (1.4142135623730951 / (2.0 * gl_FragCoord.w));
+            // #endif
             afwidth = length(vec2(dFdx(value), dFdy(value))) * 0.70710678118654757;
             return smoothstep(0.5 - afwidth, 0.5 + afwidth, value);
         }
 
+        float fill2(float sd) {
+            float aaf = fwidth(sd);
+            return smoothstep(aaf, -aaf, sd);
+        }
+
+        float median2(vec3 rgb) {
+            return max(min(rgb.r, rgb.g), min(max(rgb.r, rgb.g), rgb.b));
+        }
+
         void main() {
 
-            //MSDF
+            // MSDF
             float msdfSampleFrom = median(texture(tMapFrom, vUvFrom).rgb); //
             float msdfSampleTo = median(texture(tMapTo, vUvTo).rgb);
             float msdfSample = mix(msdfSampleFrom, msdfSampleTo, mod( progress, 1. ) );
-            float alpha = fill(0.5 - msdfSample);
+            float alpha = aastep(msdfSample);
+            // float alpha = fill(0.5 - msdfSample);
 
-            //SDF
+            // SDF
             // vec3 texFrom = texture(tMapFrom, vUvFrom).rgb;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
             // float alpha = aastep(mix( texFrom.r, texTo.r, mod( progress, 1. ) ));
@@ -287,10 +314,10 @@ function resize() {
     camera.orthographic({
         near: 0.1,
         far: 1000,
-        left: -window.innerWidth / 2,
-        right: window.innerWidth / 2,
-        bottom: -window.innerHeight / 2,
-        top: window.innerHeight / 2,
+        left: 0,
+        right: window.innerWidth,
+        bottom: -window.innerHeight,
+        top: 0,
     });
 }
 
@@ -304,7 +331,7 @@ async function loadImages(cb) {
     for (let i = 0; i < typosLength; i++) {
         const img = new Image();
         images.push(img)
-        img.src = `public/msdf2/${typos[i]}.png`;
+        img.src = `${baseSource}${typos[i]}.png`;
         img.onload = omImageLoaded;
     }
 }
@@ -318,16 +345,15 @@ function generateShader() {
         texturesArr[i].image = images[i];
     }
         
-
-    program = new Program(gl, {
+    return new Program(gl, {
         // Get fallback shader for WebGL1 - needed for OES_standard_derivatives ext
-        vertex: renderer.isWebgl2 ? vertex300 : vertex100,
-        fragment: renderer.isWebgl2 ? fragment300 : fragment100,
+        vertex: webGL2 ? vertex300 : vertex100,
+        fragment: webGL2 ? fragment300 : fragment100,
         
         uniforms: {
             tMapFrom: { value: texturesArr[0] },
             tMapTo: { value: texturesArr[1] },
-            progress: { value: 0 }
+            progress: { value: 0.001 }
         },
         transparent: true,
         cullFace: null,
@@ -337,23 +363,21 @@ function generateShader() {
 
 async function loadText() {
     await Promise.all(typos.map(async (textAttr,i )=> {
-        let datatest = await (await fetch(`public/msdf2/${textAttr}.json`)).json();
+        let datatest = await (await fetch(`${baseSource}${textAttr}.json`)).json();
         fontData[i] = datatest ;
     }));
 }
 
-function createMesh(){
+function createMesh(text){
     for (let index = 0; index < fontData.length; index++) {
         texts[index] = new Text({
             font: fontData[index],
-            text: `DIRECTORS
-            ABOUT
-            NEWS`,
-            width: 1,
+            text: text,
+            width: 10,
             align: 'left',
             letterSpacing: 0,
-            size: 50,
-            lineHeight: 1,
+            size: fontSize,
+            lineHeight: lineHeight
         });
     }
 
@@ -370,15 +394,16 @@ function createMesh(){
 
 
     // Pass the generated buffers into a geometry
-    mainMesh = new Mesh(gl, { geometry, program });
+    // console.log(program);
+    // console.log( Clone(program) );
+    // let newProg = Clone(program);
 
-    // Use the height value to position text vertically. Here it is centered.
-    // mainMesh.position.set(window.innerWidth / 2 - 100, window.innerHeight / -2 + 100,0);
-    mainMesh.position.set(188.93, 0, 0);
-    mainMesh.scale.set(0.5,1,1)
-    // mesh.setParent(scene);
+    let mesh = new Mesh(gl, { geometry, program });
 
-    mainMesh.setParent(scene);
+    mesh.setParent(scene);
+    mesh.progress = 0.001;
+
+    return mesh;
 }
 
 function startApp(){
@@ -400,19 +425,20 @@ function setEvents(){
 
 function update(t) {
 
+    for (let index = 0; index < meshArray.length; index++) {
+        const element = meshArray[index];
+        
+        // let timeSin = (Math.cos( time.val ) + 1 )/ 2;
+        let timeSin = element.progress * (typosLength - 1);
+        //Use main mesh
+        element.program.uniforms.progress.value = timeSin;
+        element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
+        element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(timeSin) + 1 ];
+    }
 
-    // let timeSin = (Math.cos( time.val ) + 1 )/ 2;
-    let timeSin = time.val * (typosLength - 1);
-    
-
-    requestAnimationFrame(update);
-    
-    //Use main mesh
-    mainMesh.program.uniforms.progress.value = timeSin;
-    mainMesh.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
-    mainMesh.program.uniforms.tMapTo.value = texturesArr[ Math.floor(timeSin) + 1 ];
 
     renderer.render({ scene, camera });
+    requestAnimationFrame(update);
 }
 
 
@@ -422,10 +448,10 @@ document.body.appendChild(gl.canvas);
 gl.clearColor(0, 0, 0, 1);
 
 const camera = new Camera(gl, {
-    left: -window.innerWidth / 2,
-    right: window.innerWidth / 2,
-    bottom: -window.innerHeight / 2,
-    top: window.innerHeight / 2,
+    left: 0,
+    right: window.innerWidth,
+    bottom: -window.innerHeight,
+    top: 0,
 });
 
 camera.position.z = 10; 
@@ -444,8 +470,15 @@ loadText().then(checkIfDataLoaded);
 function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
-        generateShader();
-        createMesh();
+        program = generateShader();
+        meshArray = [createMesh(`DANIEL
+        ASKIL`), createMesh(`BEN
+        BRIAND`)]; 
+
+        for (let index = 0; index < meshArray.length; index++) {
+            const element = meshArray[index];
+            element.position.set(600, 1500 -window.innerHeight - (2*lineHeightPos*(index+1) ), 0 );
+        }
         startApp();
         initRaycast();
     }
@@ -454,31 +487,41 @@ function checkIfDataLoaded() {
 function initRaycast() {
     const mouse = new Vec2();
     const raycast = new Raycast(gl);
-    const meshes = [mainMesh];
     
-    document.addEventListener('mousemove', move, false);
-    document.addEventListener('touchmove', move, false);
-    
-    function move(e) {
+    // document.addEventListener('mousemove', move, false);
+    // document.addEventListener('touchmove', move, false);
 
-        mouse.set(
-            e.x - ( window.innerWidth/2),
-            -e.y + (window.innerHeight / 2),
-        );
 
-        // Update the ray's origin and direction using the camera and mouse
-        raycast.castMouse(camera, mouse);
+    // for (let index = 0; index < meshArray.length; index++) {
+    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 0.5, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 1, ease: Power2.easeInOut });
+    // }
     
-        // Just for the feedback in this example - reset each mesh's hit to false
-        meshes.forEach(mesh => mesh.isHit = false);
-        // raycast.intersectBounds will test against the bounds of each mesh, and 
-        // return an array of intersected meshes in order of closest to farthest
-        const hits = raycast.intersectBounds(meshes);
-        // Update our feedback using this array
-        hits.forEach(mesh => mesh.isHit = true);
-        if( mainMesh.isHit ){
-            console.log('hit test true');
-        }
-    }
+    // function move(e) {
+
+    //     mouse.set(
+    //         e.x,
+    //         -e.y,
+    //     );
+
+    //     // Update the ray's origin and direction using the camera and mouse
+    //     raycast.castMouse(camera, mouse);
+    
+    //     // Just for the feedback in this example - reset each mesh's hit to false
+    //     meshArray.forEach(mesh => mesh.isHit = false);
+    //     // raycast.intersectBounds will test against the bounds of each mesh, and 
+    //     // return an array of intersected meshes in order of closest to farthest
+    //     const hits = raycast.intersectBounds(meshArray);
+    //     // Update our feedback using this array
+    //     hits.forEach(mesh => mesh.isHit = true);
+        
+    //     for (let index = 0; index < meshArray.length; index++) {
+    //         if( meshArray[index].isHit ){
+    //             TweenMax.to(meshArray[index], typosLength/3, { progress: 1 });
+    //         }else{
+    //             TweenMax.to(meshArray[index], typosLength/3, { progress: 0 });
+    //         }
+    //     }
+
+    // }
 }
 

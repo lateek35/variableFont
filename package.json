@@ -47,6 +47,7 @@
   },
   "dependencies": {
     "@babel/polyfill": "^7.6.0",
+    "clone": "^2.1.2",
     "core-js": "^3.3.1",
     "glsl-conditionals": "^1.0.0",
     "gsap": "^2.1.3"

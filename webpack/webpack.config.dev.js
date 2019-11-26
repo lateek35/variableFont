@@ -10,8 +10,9 @@ module.exports = merge(common, {
     chunkFilename: 'js/[name].chunk.js'
   },
   devServer: {
-      hot: false,
-      inline: false,
+      hot: true,
+      inline: true,
+      liveReload: false
   },
   plugins: [
     new Webpack.DefinePlugin({
