@@ -6,29 +6,29 @@ import { Text, Raycast } from './ogl/Extras.js';
 var Clone = require('clone');
 
 
-// let typos = [
-//     "3UltraBlack",
-//     "3Black",
-//     "3Bold",
-//     // "3Semibold",
-//     "3Medium",
-//     // "3Regular",
-//     "3Light",
-//     "3ExtraLight",
-//     "3Thin"
-// ]
-
 let typos = [
-    "0",
-    "1",
-    "2",
-    "3",
-    "4",
-    "5",
-    "6",
+    "4UltraBlack",
+    // "3Black",
+    "3Bold",
+    // "3Semibold",
+    // "2Medium",
+    "2Regular",
+    // "1Light",
+    "1ExtraLight",
+    "0Thin"
 ]
 
-let baseSource = 'public/gotik3/';
+// let typos = [
+//     "0",
+//     "1",
+//     "2",
+//     "3",
+//     "4",
+//     "5",
+//     "6",
+// ]
+
+let baseSource = 'public/msdf7/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
