@@ -22,12 +22,12 @@ let typos = [
     "3Black",
     "3Bold",
     "3Medium",
-    "3Regular",
+    "3Light",
+    "3ExtraLight",
     "3Thin",
-    "3UltraLight",
 ]
 
-let baseSource = 'public/gta1/';
+let baseSource = 'public/gotik/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
