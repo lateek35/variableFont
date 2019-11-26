@@ -23,11 +23,11 @@ let typos = [
     "3Bold",
     "3Medium",
     "3Regular",
-    "3ExtraLight",
     "3Thin",
+    "3UltraLight",
 ]
 
-let baseSource = 'public/msdf7/';
+let baseSource = 'public/gta1/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
