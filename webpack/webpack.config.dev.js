@@ -10,6 +10,8 @@ module.exports = merge(common, {
     chunkFilename: 'js/[name].chunk.js'
   },
   devServer: {
+      host: '10.159.172.182',
+      port: 8120,
       hot: true,
       inline: true,
       liveReload: false

@@ -1,4 +1,4 @@
-import TweenMax, { Power0 } from "gsap/TweenMax";
+import TweenMax, { Power0, Power1 } from "gsap/TweenMax";
 import '../styles/index.scss'
 import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh, Vec2 } from './ogl/Core.js';
 import { Text, Raycast } from './ogl/Extras.js';
@@ -35,7 +35,7 @@ let fontSize = 150;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
 let webGL2 = true;
-
+let currentStep = 0;
 // RETREIVE NUMBER OF VARIATIONS DURING TRANSITION;
 let typosLength = typos.length; 
 
@@ -210,7 +210,7 @@ var vertex100;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
             // float alpha = aastep(mix( texFrom.r, texTo.r, mod(progress, 1.) ));
             
-            FragColor = vec4(vec3(1., alpha, alpha),  alpha);
+            FragColor = vec4(vec3(1.),  alpha);
         }
     `;
     
@@ -342,7 +342,7 @@ function generateShader() {
             tMapTo: { value: texturesArr[1] },
             progress: { value: 0.001 }
         },
-        transparent: false,
+        transparent: true,
         cullFace: null,
         depthWrite: false,
     });
@@ -404,33 +404,41 @@ function startApp(){
         },
     });
 
-    for (let index = 0; index < fontData.length - 1; index++) {
-        // if ( (index + 2) < (fontData.length-1) ){
-            timeline.fromTo(time, 0.3, {val: index }, { val: (index + 1) , onComplete: function () { updateFont(index + 1) }, onReverseComplete: function () { updateFont(index + 1) }, ease: Power0.easeNone });
-        // }
-    }
+    // for (let index = 0; index < fontData.length - 1; index++) {
+    //     // if ( (index + 2) < (fontData.length-1) ){
+    //         timeline.fromTo(time, 0.3, {val: index }, { val: (index + 1) , onComplete: function () { updateFont(index + 1) }, onReverseComplete: function () { updateFont(index + 1) }, ease: Power0.easeNone });
+    //     // }
+    // }
+
+    TweenMax.to(time, 1, { val: fontData.length-1, yoyo: true, repeat: -1, onUpdate: updateFont2, ease: Power1.easeInOut } )
 
     requestAnimationFrame(update);
 }
 
-function updateFont(nbr){
+function updateFont2(){
+    meshArray[0].program.uniforms.progress.value = time.val;
+
+    let nbr = Math.floor(time.val);
+
+    if (currentStep !== nbr){
+        meshArray[0].program.uniforms.tMapFrom.value = texturesArr[nbr];
+        meshArray[0].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
     
-    if ((nbr+1) >= fontData.length) return;
-
-    meshArray[0].program.uniforms.tMapFrom.value = texturesArr[nbr];
-    meshArray[0].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
-
-    meshArray[0].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
-    meshArray[0].geometry.attributes.positionTo.data = texts[(nbr+1)].buffers.position;
+        meshArray[0].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
+        meshArray[0].geometry.attributes.positionTo.data = texts[(nbr + 1)].buffers.position;
     
-    meshArray[0].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
-    meshArray[0].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
+        meshArray[0].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
+        meshArray[0].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
+    
+        meshArray[0].geometry.attributes.positionFrom.needsUpdate = true;
+        meshArray[0].geometry.attributes.positionTo.needsUpdate = true;
+        meshArray[0].geometry.attributes.uvFrom.needsUpdate = true;
+        meshArray[0].geometry.attributes.uvTo.needsUpdate = true;
 
-    meshArray[0].geometry.attributes.positionFrom.needsUpdate = true;
-    meshArray[0].geometry.attributes.positionTo.needsUpdate = true;
-    meshArray[0].geometry.attributes.uvFrom.needsUpdate = true;
-    meshArray[0].geometry.attributes.uvTo.needsUpdate = true;
+        currentStep = nbr;
+    }
 }
+
 
 function setEvents(){
     //Detect main view resize
@@ -450,7 +458,7 @@ function update(t) {
         // let timeSin = element.progress * (typosLength - 1);
         
         //Use main mesh
-        element.program.uniforms.progress.value = time.val;
+        // element.program.uniforms.progress.value = time.val;
         // element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(time.val)];
         // element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(time.val) + 1 ];
     }
