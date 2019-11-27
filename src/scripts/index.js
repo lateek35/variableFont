@@ -2,25 +2,17 @@ import TweenMax, { Power0, Power1 } from "gsap/TweenMax";
 import '../styles/index.scss'
 import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh, Vec2 } from './ogl/Core.js';
 import { Text, Raycast } from './ogl/Extras.js';
-import { TimelineLite, TimelineMax } from 'gsap';
 
-var Clone = require('clone');
-
-
-// let typos = [
-//     "3UltraBlack",
-//     "3Black",
-//     "3Bold",
-//     // "3Semibold",
-//     "3Medium",
-//     // "3Regular",
-//     "3Light",
-//     "3ExtraLight",
-//     "3Thin"
-// ]
 
 
 let typos = [
+    "a6",
+    "a5",
+    "a4",
+    "a3",
+    "a2",
+    "a1",
+    "a0",
     "0",
     "1",
     "2",
@@ -28,6 +20,19 @@ let typos = [
     "4",
     "5",
     "6",
+    "5",
+    "4",
+    "3",
+    "2",
+    "1",
+    "0",
+    "00",
+    "11",
+    "22",
+    "33",
+    "44",
+    "55",
+    "66",
 ]
 
 let baseSource = 'public/gotik4/';
@@ -392,53 +397,10 @@ function createMesh(text){
 function startApp(){
     setEvents();
 
-    let timeline = new TimelineMax({yoyo: true, repeat: -1, 
-        onUpdate: function(){
-            // console.log(time.val);
-        },
-        onRepeat: function(){
-            repeat = !repeat;
-        },
-        onReverseComplete: function () {
-            console.log("reverse complete")
-        },
-    });
-
-    // for (let index = 0; index < fontData.length - 1; index++) {
-    //     // if ( (index + 2) < (fontData.length-1) ){
-    //         timeline.fromTo(time, 0.3, {val: index }, { val: (index + 1) , onComplete: function () { updateFont(index + 1) }, onReverseComplete: function () { updateFont(index + 1) }, ease: Power0.easeNone });
-    //     // }
-    // }
-
-    TweenMax.to(time, 1, { val: fontData.length-1, yoyo: true, repeat: -1, onUpdate: updateFont2, ease: Power1.easeInOut } )
+    TweenMax.to(time, 6, { val: fontData.length-1, yoyo: true, repeat: -1, ease: Power0.easeNone } )
 
     requestAnimationFrame(update);
 }
-
-function updateFont2(){
-    meshArray[0].program.uniforms.progress.value = time.val;
-
-    let nbr = Math.floor(time.val);
-
-    if (currentStep !== nbr){
-        meshArray[0].program.uniforms.tMapFrom.value = texturesArr[nbr];
-        meshArray[0].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
-    
-        meshArray[0].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
-        meshArray[0].geometry.attributes.positionTo.data = texts[(nbr + 1)].buffers.position;
-    
-        meshArray[0].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
-        meshArray[0].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
-    
-        meshArray[0].geometry.attributes.positionFrom.needsUpdate = true;
-        meshArray[0].geometry.attributes.positionTo.needsUpdate = true;
-        meshArray[0].geometry.attributes.uvFrom.needsUpdate = true;
-        meshArray[0].geometry.attributes.uvTo.needsUpdate = true;
-
-        currentStep = nbr;
-    }
-}
-
 
 function setEvents(){
     //Detect main view resize
@@ -451,16 +413,31 @@ function setEvents(){
 
 function update(t) {
 
-    for (let index = 0; index < meshArray.length; index++) {
-        const element = meshArray[index];
-        
-        // let timeSin = (Math.cos( time.val ) + 1 )/ 2;
-        // let timeSin = element.progress * (typosLength - 1);
-        
-        //Use main mesh
-        // element.program.uniforms.progress.value = time.val;
-        // element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(time.val)];
-        // element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(time.val) + 1 ];
+    let nbr = Math.floor(time.val);
+
+    meshArray[0].program.uniforms.progress.value = time.val;
+
+    if (currentStep !== nbr) {
+        console.log("======= INTO =======");
+        for (let index = 0; index < meshArray.length; index++) {
+            meshArray[index].program.uniforms.tMapFrom.value = texturesArr[nbr];
+            meshArray[index].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
+
+            
+            meshArray[index].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
+            meshArray[index].geometry.attributes.positionTo.data = texts[(nbr + 1)].buffers.position;
+
+            
+            meshArray[index].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
+            meshArray[index].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
+
+            meshArray[index].geometry.attributes.positionFrom.needsUpdate = true;
+            meshArray[index].geometry.attributes.positionTo.needsUpdate = true;
+            meshArray[index].geometry.attributes.uvFrom.needsUpdate = true;
+            meshArray[index].geometry.attributes.uvTo.needsUpdate = true;
+        }
+
+        currentStep = nbr;
     }
 
 
@@ -470,9 +447,10 @@ function update(t) {
 
 
 const gl = renderer.gl;
+
 // APPEND THE CANVAS
 document.body.appendChild(gl.canvas);
-gl.clearColor(0, 0, 0, 1);
+gl.clearColor(0.1, 0.1, 0.1, 1);
 
 const camera = new Camera(gl, {
     left: 0,
@@ -498,10 +476,12 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`DANIEL`), 
-        // createMesh(`BEN
-        // BRIAND`)
-        ]; 
+        meshArray = [createMesh(`ABC
+        DEF`),
+        createMesh(`HJI
+        IOP`),
+        createMesh(`WEB
+        NOP`)]; 
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];
