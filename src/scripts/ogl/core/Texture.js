@@ -1,6 +1,5 @@
 // TODO: facilitate Compressed Textures
 // TODO: delete texture
-// TODO: should I support anisotropy? Maybe a way to extend the update easily
 // TODO: check is ArrayBuffer.isView is best way to check for Typed Arrays?
 // TODO: use texSubImage2D for updates
 // TODO: need? encoding = linearEncoding
@@ -11,7 +10,7 @@ function isPowerOf2(value) {
     return (value & (value - 1)) === 0;
 }
 
-let ID = 0;
+let ID = 1;
 
 export class Texture {
     constructor(gl, {
@@ -28,6 +27,7 @@ export class Texture {
         premultiplyAlpha = false,
         unpackAlignment = 4,
         flipY = target == gl.TEXTURE_2D ? true : false,
+        anisotropy = 0,
         level = 0,
         width, // used for RenderTargets or Data Textures
         height = width,
@@ -48,15 +48,16 @@ export class Texture {
         this.premultiplyAlpha = premultiplyAlpha;
         this.unpackAlignment = unpackAlignment;
         this.flipY = flipY;
+        this.anisotropy = Math.min(anisotropy, this.gl.renderer.parameters.maxAnisotropy);
         this.level = level;
         this.width = width;
         this.height = height;
         this.texture = this.gl.createTexture();
-
+        
         this.store = {
             image: null,
         };
-
+        
         // Alias for state store to avoid redundant calls for global state
         this.glState = this.gl.renderer.state;
 
@@ -66,6 +67,7 @@ export class Texture {
         this.state.magFilter = this.gl.LINEAR;
         this.state.wrapS = this.gl.REPEAT;
         this.state.wrapT = this.gl.REPEAT;
+        this.state.anisotropy = 0;
     }
 
     bind() {
@@ -123,6 +125,11 @@ export class Texture {
         if (this.wrapT !== this.state.wrapT) {
             this.gl.texParameteri(this.target, this.gl.TEXTURE_WRAP_T, this.wrapT);
             this.state.wrapT = this.wrapT;
+        }
+
+        if (this.anisotropy && this.anisotropy !== this.state.anisotropy) {
+            this.gl.texParameterf(this.target, this.gl.renderer.getExtension('EXT_texture_filter_anisotropic').TEXTURE_MAX_ANISOTROPY_EXT, this.anisotropy);
+            this.state.anisotropy = this.anisotropy;
         }
 
         if (this.image) {

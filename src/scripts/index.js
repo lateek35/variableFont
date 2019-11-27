@@ -18,6 +18,7 @@ var Clone = require('clone');
 //     "3Thin"
 // ]
 
+
 let typos = [
     "0",
     "1",
@@ -28,7 +29,7 @@ let typos = [
     "6",
 ]
 
-let baseSource = 'public/gotik3/';
+let baseSource = 'public/gotik4/';
 let fontSize = 200;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
@@ -377,23 +378,22 @@ function createMesh(text){
         });
     }
 
-    // setTimeout(() => {
-    //     console.log(texts[5].buffers.uv);
-    //     texts[5].update({
-    //         font: fontData[5],
-    //         text: 'WAZA',
-    //         width: 10,
-    //         align: 'left',
-    //         letterSpacing: 0,
-    //         size: fontSize,
-    //         lineHeight: lineHeight
-    //     });
+    setInterval(() => {
+        texts[5].update({ text: Math.random().toString(36).substr(2, 6).toUpperCase() });
 
-    //     meshArray[0].geometry.updateAttribute({
-    //         target: 34962,
-    //         data: texts[5].buffers.uv
-    //     });
-    // }, 1000);
+        // console.log(texts[5].buffers.uv);
+        // console.log(texts[5].buffers.uv);
+        // console.log("-----");
+        // meshArray[0].geometry.updateAttribute({
+        //     target: 34962,
+        //     data: texts[5].buffers.uv
+        // });
+        let rand = Math.floor(Math.random() * (6 - 0 + 1)) + 0;
+        meshArray[0].geometry.attributes[`uv${rand}`].data = texts[5].buffers.uv;
+        meshArray[0].geometry.attributes[`uv${rand}`].needsUpdate = true;
+        meshArray[0].geometry.attributes[`position${rand}`].data = texts[5].buffers.position;
+        meshArray[0].geometry.attributes[`position${rand}`].needsUpdate = true;
+    }, 100);
 
     let geomJson = {};
     for (let index = 0; index < fontData.length; index++) {
@@ -413,8 +413,6 @@ function createMesh(text){
     // let newProg = Clone(program);
 
     let mesh = new Mesh(gl, { geometry, program });
-
-    console.log(mesh);
 
     mesh.setParent(scene);
     mesh.progress = 0.001;
@@ -488,9 +486,10 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`DANIEL
-        ASKIL`), createMesh(`BEN
-        BRIAND`)]; 
+        meshArray = [createMesh(`DANIEL`), 
+        // createMesh(`BEN
+        // BRIAND`)
+        ]; 
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];

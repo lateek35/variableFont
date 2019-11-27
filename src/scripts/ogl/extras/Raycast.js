@@ -21,31 +21,12 @@ export class Raycast {
     castMouse(camera, mouse = [0, 0]) {
 
         // Set origin
-        // camera.worldMatrix.getTranslation(this.origin);
-        this.origin.set(mouse[0], mouse[1], 0);
-
+        camera.worldMatrix.getTranslation(this.origin);
+        
         // Set direction
         this.direction.set(mouse[0], mouse[1], 0.5);
-        // camera.unproject(this.direction);
-        // this.direction.sub(this.origin).normalize();
-    }
-
-
-    findIfHover(mesh) {
-        if (!mesh.geometry.bounds) mesh.geometry.computeBoundingBox();
-
-        let meshWidth = mesh.scale.x * (mesh.geometry.bounds.max.x - mesh.geometry.bounds.min.x)
-        let meshHeight = mesh.scale.y * (mesh.geometry.bounds.max.y - mesh.geometry.bounds.min.y)
-
-        if (this.origin.x >= mesh.position.x
-            && this.origin.x <= (mesh.position.x + meshWidth)
-            && this.origin.y <= mesh.position.y
-            && this.origin.y >= (mesh.position.y - meshHeight)
-        ) {
-            return 1;
-        }else{
-            return 0;
-        }
+        camera.unproject(this.direction);
+        this.direction.sub(this.origin).normalize();
     }
 
     intersectBounds(meshes) {
@@ -61,7 +42,7 @@ export class Raycast {
 
             // Create bounds
             if (!mesh.geometry.bounds) mesh.geometry.computeBoundingBox();
-            if (mesh.geometry.raycast === 'sphere' && mesh.geometry.bounds === Infinity) mesh.geometry.computeBoundingSphere();
+            if (mesh.geometry.raycast === 'sphere' && mesh.geometry.bounds.radius === Infinity) mesh.geometry.computeBoundingSphere();
 
             // Take world space ray and make it object space to align with bounding box
             invWorldMat4.inverse(mesh.worldMatrix);
@@ -69,11 +50,10 @@ export class Raycast {
             direction.copy(this.direction).transformDirection(invWorldMat4);
 
             let distance = 0;
-            if (mesh.geometry.raycast === 'sphere') {
+            if (mesh.geometry.raycast === 'sphere') { 
                 distance = this.intersectSphere(mesh.geometry.bounds, origin, direction);
             } else {
-                distance = this.findIfHover(mesh, origin, direction);
-                // distance = this.intersectBox(mesh.geometry.bounds, origin, direction);
+                distance = this.intersectBox(mesh.geometry.bounds, origin, direction);
             }
             if (!distance) return;
 
@@ -113,11 +93,11 @@ export class Raycast {
     // Ray AABB - Ray Axis aligned bounding box testing
     intersectBox(box, origin = this.origin, direction = this.direction) {
         let tmin, tmax, tYmin, tYmax, tZmin, tZmax;
-
+    
         const invdirx = 1 / direction.x;
         const invdiry = 1 / direction.y;
         const invdirz = 1 / direction.z;
-
+    
         const min = box.min;
         const max = box.max;
 
@@ -126,19 +106,19 @@ export class Raycast {
 
         tYmin = ((invdiry >= 0 ? min.y : max.y) - origin.y) * invdiry;
         tYmax = ((invdiry >= 0 ? max.y : min.y) - origin.y) * invdiry;
-
+    
         if ((tmin > tYmax) || (tYmin > tmax)) return 0;
-
+    
         if (tYmin > tmin) tmin = tYmin;
         if (tYmax < tmax) tmax = tYmax;
-
+    
         tZmin = ((invdirz >= 0 ? min.z : max.z) - origin.z) * invdirz;
         tZmax = ((invdirz >= 0 ? max.z : min.z) - origin.z) * invdirz;
-
+    
         if ((tmin > tZmax) || (tZmin > tmax)) return 0;
         if (tZmin > tmin) tmin = tZmin;
         if (tZmax < tmax) tmax = tZmax;
-
+    
         if (tmax < 0) return 0;
 
         return tmin >= 0 ? tmin : tmax;

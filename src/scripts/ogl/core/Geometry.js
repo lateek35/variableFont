@@ -15,8 +15,8 @@ import {Vec3} from '../math/Vec3.js';
 
 const tempVec3 = new Vec3();
 
-let ID = 0;
-let ATTR_ID = 0;
+let ID = 1;
+let ATTR_ID = 1;
 
 export class Geometry {
     constructor(gl, attributes = {}) {
@@ -174,9 +174,9 @@ export class Geometry {
     }
 
     computeBoundingBox(array) {
-        
+
         // Use position buffer if available
-        if (!array && this.attributes.position0) array = this.attributes.position0.data;
+        if (!array && this.attributes.position) array = this.attributes.position.data;
         if (!array) console.warn('No position buffer found to compute bounds');
 
         if (!this.bounds) {
