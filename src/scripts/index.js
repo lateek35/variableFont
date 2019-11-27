@@ -39,8 +39,6 @@ let typosLength = typos.length;
 
 // DEFINES ALL COMPUTED VAR FILLDE FOR SHADER CONSTRUCTION
 let imports = '';
-let vUvs = ''
-let vUvsIn = ''
 let toTarget = '';
 let indexTarget = '';
 let vUvFrom = '';
@@ -81,8 +79,6 @@ for (let index = 0; index < typosLength; index++) {
     imports += `${shaderIn} vec3 position${index};
         `;
     imports += `${shaderOut} vec2 vUv${index};
-        `;
-    vUvs += `vUv${index} = uv${index};
         `;
     indexTarget += `float indexTarget${index} = when_and( when_ge(progress, ${index}.), when_lt(progress, ${index+1}.) );
         `;
@@ -142,7 +138,6 @@ var vertex100;
     
         void main() {
     
-            ${vUvs}
             ${indexTarget}
             ${toTarget}
             
@@ -286,7 +281,6 @@ var vertex100;
     
         void main() {
     
-            ${vUvs}
             ${indexTarget}
             ${toTarget}
             
@@ -345,7 +339,8 @@ function generateShader() {
         });
         texturesArr[i].image = images[i];
     }
-        
+    
+
     return new Program(gl, {
         // Get fallback shader for WebGL1 - needed for OES_standard_derivatives ext
         vertex: webGL2 ? vertex300 : vertex100,
@@ -382,6 +377,24 @@ function createMesh(text){
         });
     }
 
+    // setTimeout(() => {
+    //     console.log(texts[5].buffers.uv);
+    //     texts[5].update({
+    //         font: fontData[5],
+    //         text: 'WAZA',
+    //         width: 10,
+    //         align: 'left',
+    //         letterSpacing: 0,
+    //         size: fontSize,
+    //         lineHeight: lineHeight
+    //     });
+
+    //     meshArray[0].geometry.updateAttribute({
+    //         target: 34962,
+    //         data: texts[5].buffers.uv
+    //     });
+    // }, 1000);
+
     let geomJson = {};
     for (let index = 0; index < fontData.length; index++) {
         geomJson[`position${index}`] = { size: 3, data: texts[index].buffers.position },
@@ -400,6 +413,8 @@ function createMesh(text){
     // let newProg = Clone(program);
 
     let mesh = new Mesh(gl, { geometry, program });
+
+    console.log(mesh);
 
     mesh.setParent(scene);
     mesh.progress = 0.001;
@@ -431,6 +446,7 @@ function update(t) {
         
         // let timeSin = (Math.cos( time.val ) + 1 )/ 2;
         let timeSin = element.progress * (typosLength - 1);
+        
         //Use main mesh
         element.program.uniforms.progress.value = timeSin;
         element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
@@ -494,7 +510,7 @@ function initRaycast() {
 
 
     // for (let index = 0; index < meshArray.length; index++) {
-    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 2, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 1, ease: Power2.easeInOut });
+    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 1, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 0.1, ease: Power2.easeInOut });
     // }
     
     // function move(e) {
