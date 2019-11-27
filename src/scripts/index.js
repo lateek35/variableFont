@@ -2,6 +2,7 @@ import TweenMax, { Power0 } from "gsap/TweenMax";
 import '../styles/index.scss'
 import { Renderer, Camera, Transform, Geometry, Texture, Program, Mesh, Vec2 } from './ogl/Core.js';
 import { Text, Raycast } from './ogl/Extras.js';
+import { TimelineLite, TimelineMax } from 'gsap';
 
 var Clone = require('clone');
 
@@ -46,6 +47,7 @@ let vUvFrom = '';
 let vUvTo = '';
 let positionFrom = '';
 let positionTo = '';
+let repeat = false;
 
 // WEBGL-JS VAR
 let texturesArr = [];
@@ -142,7 +144,7 @@ var vertex100;
             vUvFrom = uvFrom;
             vUvTo = uvTo;
                 
-            vec3 endPostion = mix(positionFrom, positionTo, progress );
+            vec3 endPostion = mix(positionFrom, positionTo, mod(progress, 1.) );
                 
             gl_Position = projectionMatrix * modelViewMatrix * vec4(endPostion.xy, 0., 1.);
         }
@@ -199,16 +201,16 @@ var vertex100;
             // MSDF
             float msdfSampleFrom = median(texture(tMapFrom, vUvFrom).rgb); //
             float msdfSampleTo = median(texture(tMapTo, vUvTo).rgb);
-            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, progress );
+            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, mod(progress, 1.) );
             float alpha = aastep(msdfSample);
             // float alpha = fill(0.5 - msdfSample);
 
             // SDF
             // vec3 texFrom = texture(tMapFrom, vUvFrom).rgb;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
-            // float alpha = aastep(mix( texFrom.r, texTo.r, progress ));
+            // float alpha = aastep(mix( texFrom.r, texTo.r, mod(progress, 1.) ));
             
-            FragColor = vec4(vec3(1.),  alpha);
+            FragColor = vec4(vec3(1., alpha, alpha),  alpha);
         }
     `;
     
@@ -340,7 +342,7 @@ function generateShader() {
             tMapTo: { value: texturesArr[1] },
             progress: { value: 0.001 }
         },
-        transparent: true,
+        transparent: false,
         cullFace: null,
         depthWrite: false,
     });
@@ -389,10 +391,45 @@ function createMesh(text){
 
 function startApp(){
     setEvents();
-    
-    TweenMax.to(time, 1, { val: 1, repeat: -1, repeatDelay: 0, yoyo: true });
+
+    let timeline = new TimelineMax({yoyo: true, repeat: -1, 
+        onUpdate: function(){
+            // console.log(time.val);
+        },
+        onRepeat: function(){
+            repeat = !repeat;
+        },
+        onReverseComplete: function () {
+            console.log("reverse complete")
+        },
+    });
+
+    for (let index = 0; index < fontData.length - 1; index++) {
+        // if ( (index + 2) < (fontData.length-1) ){
+            timeline.fromTo(time, 0.3, {val: index }, { val: (index + 1) , onComplete: function () { updateFont(index + 1) }, onReverseComplete: function () { updateFont(index + 1) }, ease: Power0.easeNone });
+        // }
+    }
 
     requestAnimationFrame(update);
+}
+
+function updateFont(nbr){
+    
+    if ((nbr+1) >= fontData.length) return;
+
+    meshArray[0].program.uniforms.tMapFrom.value = texturesArr[nbr];
+    meshArray[0].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
+
+    meshArray[0].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
+    meshArray[0].geometry.attributes.positionTo.data = texts[(nbr+1)].buffers.position;
+    
+    meshArray[0].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
+    meshArray[0].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
+
+    meshArray[0].geometry.attributes.positionFrom.needsUpdate = true;
+    meshArray[0].geometry.attributes.positionTo.needsUpdate = true;
+    meshArray[0].geometry.attributes.uvFrom.needsUpdate = true;
+    meshArray[0].geometry.attributes.uvTo.needsUpdate = true;
 }
 
 function setEvents(){
@@ -414,8 +451,8 @@ function update(t) {
         
         //Use main mesh
         element.program.uniforms.progress.value = time.val;
-        // element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
-        // element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(timeSin) + 1 ];
+        // element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(time.val)];
+        // element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(time.val) + 1 ];
     }
 
 

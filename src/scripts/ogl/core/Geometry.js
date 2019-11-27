@@ -79,7 +79,6 @@ export class Geometry {
     }
 
     updateAttribute(attr) {
-
         // Already bound, prevent gl command
         if (this.glState.boundBuffer !== attr.id) {
             this.gl.bindBuffer(attr.target, attr.buffer);
