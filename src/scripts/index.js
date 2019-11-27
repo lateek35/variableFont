@@ -30,7 +30,7 @@ let typos = [
 ]
 
 let baseSource = 'public/gotik4/';
-let fontSize = 200;
+let fontSize = 150;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
 let webGL2 = true;
@@ -53,7 +53,6 @@ let fontData = [];
 let texts = [];
 let images = [];
 let program;
-let progressTacker = 0;
 let dataLoaded = 0;
 let meshArray;
 
@@ -75,12 +74,12 @@ const shaderOut = webGL2 ? 'out' : 'varying';
 
 // PRECOMPUTE OUR SHADER VALUE
 for (let index = 0; index < typosLength; index++) {
-    imports += `${shaderIn} vec2 uv${index};
-        `;
-    imports += `${shaderIn} vec3 position${index};
-        `;
-    imports += `${shaderOut} vec2 vUv${index};
-        `;
+    // imports += `${shaderIn} vec2 uv${index};
+    //     `;
+    // imports += `${shaderIn} vec3 position${index};
+    //     `;
+    // imports += `${shaderOut} vec2 vUv${index};
+    //     `;
     indexTarget += `float indexTarget${index} = when_and( when_ge(progress, ${index}.), when_lt(progress, ${index+1}.) );
         `;
     vUvFrom += `uv${index} * indexTarget${index} + 
@@ -122,41 +121,30 @@ var vertex100;
        `#version 300 es
         precision highp float;
         precision highp int;
-    
-        uniform float progress;
-    
-        out vec2 vUvFrom;
-        out vec2 vUvTo;
-    
+
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
-        
-        ${imports}
     
-        float when_and(float a, float b) { return a * b; }
-        float when_lt(float x, float y) { return max(sign(y - x), 0.0); }
-        float when_ge(float x, float y) { return 1.0 - when_lt(x, y); }
-    
+        uniform float progress;
+
+        in vec2 uvFrom;
+        in vec2 uvTo;
+        in vec3 positionFrom;
+        in vec3 positionTo;
+
+
+        out vec2 vUvFrom;
+        out vec2 vUvTo;
+
+
         void main() {
-    
-            ${indexTarget}
-            ${toTarget}
-            
-            vUvFrom =
-            ${vUvFrom}
-    
-            vUvTo =
-            ${vUvTo}
-    
-            vec3 positionFrom =
-            ${positionFrom}
-    
-            vec3 positionTo=
-            ${positionTo}
-    
-            vec3 endPostion = mix(positionFrom, positionTo, mod(progress, 1.) );
-            
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(endPostion.xy, 0, 1);
+
+            vUvFrom = uvFrom;
+            vUvTo = uvTo;
+                
+            vec3 endPostion = mix(positionFrom, positionTo, progress );
+                
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(endPostion.xy, 0., 1.);
         }
     `;
 
@@ -169,14 +157,14 @@ var vertex100;
         precision highp float;
         precision highp int;
 
-        uniform float progress;
-        out vec4 color;
-        
         in vec2 vUvFrom;
         in vec2 vUvTo;
 
+        uniform float progress;
         uniform sampler2D tMapFrom;
         uniform sampler2D tMapTo;
+
+        out vec4 FragColor;
 
         float fill(float sd) {
             float aaf = fwidth(sd);
@@ -211,16 +199,16 @@ var vertex100;
             // MSDF
             float msdfSampleFrom = median(texture(tMapFrom, vUvFrom).rgb); //
             float msdfSampleTo = median(texture(tMapTo, vUvTo).rgb);
-            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, mod( progress, 1. ) );
+            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, progress );
             float alpha = aastep(msdfSample);
             // float alpha = fill(0.5 - msdfSample);
 
             // SDF
             // vec3 texFrom = texture(tMapFrom, vUvFrom).rgb;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
-            // float alpha = aastep(mix( texFrom.r, texTo.r, mod( progress, 1. ) ));
+            // float alpha = aastep(mix( texFrom.r, texTo.r, progress ));
             
-            color = vec4(vec3(1.),  alpha);
+            FragColor = vec4(vec3(1.),  alpha);
         }
     `;
     
@@ -378,39 +366,18 @@ function createMesh(text){
         });
     }
 
-    setInterval(() => {
-        texts[5].update({ text: Math.random().toString(36).substr(2, 6).toUpperCase() });
-
-        // console.log(texts[5].buffers.uv);
-        // console.log(texts[5].buffers.uv);
-        // console.log("-----");
-        // meshArray[0].geometry.updateAttribute({
-        //     target: 34962,
-        //     data: texts[5].buffers.uv
-        // });
-        let rand = Math.floor(Math.random() * (6 - 0 + 1)) + 0;
-        meshArray[0].geometry.attributes[`uv${rand}`].data = texts[5].buffers.uv;
-        meshArray[0].geometry.attributes[`uv${rand}`].needsUpdate = true;
-        meshArray[0].geometry.attributes[`position${rand}`].data = texts[5].buffers.position;
-        meshArray[0].geometry.attributes[`position${rand}`].needsUpdate = true;
-    }, 100);
-
     let geomJson = {};
     for (let index = 0; index < fontData.length; index++) {
-        geomJson[`position${index}`] = { size: 3, data: texts[index].buffers.position },
-        geomJson[`uv${index}`] = { size: 2, data: texts[index].buffers.uv }
+        geomJson[`positionFrom`] = { size: 3, data: texts[0].buffers.position },
+        geomJson[`positionTo`] = { size: 3, data: texts[1].buffers.position },
+        geomJson[`uvFrom`] = { size: 2, data: texts[0].buffers.uv }
+        geomJson[`uvTo`] = { size: 2, data: texts[1].buffers.uv }
     }
     geomJson['id'] = { size: 1, data: texts[0].buffers.id };
     geomJson['index'] = { data: texts[0].buffers.index };
 
 
     const geometry = new Geometry(gl, geomJson);
-
-
-    // Pass the generated buffers into a geometry
-    // console.log(program);
-    // console.log( Clone(program) );
-    // let newProg = Clone(program);
 
     let mesh = new Mesh(gl, { geometry, program });
 
@@ -443,12 +410,12 @@ function update(t) {
         const element = meshArray[index];
         
         // let timeSin = (Math.cos( time.val ) + 1 )/ 2;
-        let timeSin = element.progress * (typosLength - 1);
+        // let timeSin = element.progress * (typosLength - 1);
         
         //Use main mesh
-        element.program.uniforms.progress.value = timeSin;
-        element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
-        element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(timeSin) + 1 ];
+        element.program.uniforms.progress.value = time.val;
+        // element.program.uniforms.tMapFrom.value = texturesArr[ Math.floor(timeSin)];
+        // element.program.uniforms.tMapTo.value = texturesArr[ Math.floor(timeSin) + 1 ];
     }
 
 
@@ -509,7 +476,7 @@ function initRaycast() {
 
 
     // for (let index = 0; index < meshArray.length; index++) {
-    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 1, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 0.1, ease: Power2.easeInOut });
+    // TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 1, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 0.1, ease: Power2.easeInOut });
     // }
     
     // function move(e) {
