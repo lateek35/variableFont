@@ -36,10 +36,10 @@ let typos = [
 ]
 
 let baseSource = 'public/gotik4/';
-let fontSize = 150;
-let lineHeight = 1;
+let fontSize = 50;
+let lineHeight = 0.9;
 let lineHeightPos = fontSize * 1;
-let webGL2 = true;
+let webGL2 = false;
 let currentStep = 0;
 // RETREIVE NUMBER OF VARIATIONS DURING TRANSITION;
 let typosLength = typos.length; 
@@ -215,7 +215,7 @@ var vertex100;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
             // float alpha = aastep(mix( texFrom.r, texTo.r, mod(progress, 1.) ));
             
-            FragColor = vec4(vec3(1., alpha, alpha),  alpha);
+            FragColor = vec4(vec3(1.),  alpha);
         }
     `;
     
@@ -225,33 +225,56 @@ var vertex100;
         precision highp float;
         precision highp int;
     
-        uniform float progress;
-        ${shaderOut} vec4 color;
-        
         varying vec2 vUvFrom;
         varying vec2 vUvTo;
-    
+
+        uniform float progress;
         uniform sampler2D tMapFrom;
         uniform sampler2D tMapTo;
 
-    
-        float median(vec3 rgb) {
-            return max(min(rgb.r, rgb.g), min(max(rgb.r, rgb.g), rgb.b)) - 0.5;
+        float fill(float sd) {
+            float aaf = fwidth(sd);
+            return smoothstep(aaf, -aaf, sd);
         }
-    
-    
+
+        float median(vec3 rgb) {
+            return max(min(rgb.r, rgb.g), min(max(rgb.r, rgb.g), rgb.b));
+        }
+
+        float aastep(float value) {
+            // #ifdef GL_OES_standard_derivatives
+                float afwidth = length(vec2(dFdx(value), dFdy(value))) * 0.70710678118654757;
+            // #else
+            //     float afwidth = (1.0 / 500.0) * (1.4142135623730951 / (2.0 * gl_FragCoord.w));
+            // #endif
+            afwidth = length(vec2(dFdx(value), dFdy(value))) * 0.70710678118654757;
+            return smoothstep(0.5 - afwidth, 0.5 + afwidth, value);
+        }
+
+        float fill2(float sd) {
+            float aaf = fwidth(sd);
+            return smoothstep(aaf, -aaf, sd);
+        }
+
+        float median2(vec3 rgb) {
+            return max(min(rgb.r, rgb.g), min(max(rgb.r, rgb.g), rgb.b));
+        }
+
         void main() {
-    
+
+            // MSDF
             float msdfSampleFrom = median(texture2D(tMapFrom, vUvFrom).rgb); //
             float msdfSampleTo = median(texture2D(tMapTo, vUvTo).rgb);
+            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, mod(progress, 1.) );
+            float alpha = aastep(msdfSample);
+            // float alpha = fill(0.5 - msdfSample);
 
-            float msdfSample = mix(msdfSampleFrom, msdfSampleTo, mod( progress, 1. ) );
-
-            float d = fwidth(msdfSample);
-            float alpha = smoothstep(-d, d, msdfSample);
+            // SDF
+            // vec3 texFrom = texture2D(tMapFrom, vUvFrom).rgb;
+            // vec3 texTo = texture2D(tMapTo, vUvTo).rgb;
+            // float alpha = aastep(mix( texFrom.r, texTo.r, mod(progress, 1.) ));
             
-            gl_FragColor.rgb = vec3(1.);
-            gl_FragColor.a = alpha;
+            gl_FragColor = vec4(vec3(1.),  alpha);
         }
     `;
     
@@ -261,40 +284,29 @@ var vertex100;
         precision highp float;
         precision highp int;
     
-        uniform float progress;
-    
-        ${shaderOut} vec2 vUvFrom;
-        ${shaderOut} vec2 vUvTo;
-    
         uniform mat4 modelViewMatrix;
         uniform mat4 projectionMatrix;
-        
-        ${imports}
     
-        float when_and(float a, float b) { return a * b; }
-        float when_lt(float x, float y) { return max(sign(y - x), 0.0); }
-        float when_ge(float x, float y) { return 1.0 - when_lt(x, y); }
-    
+        uniform float progress;
+
+        attribute vec2 uvFrom;
+        attribute vec2 uvTo;
+        attribute vec3 positionFrom;
+        attribute vec3 positionTo;
+
+
+        varying vec2 vUvFrom;
+        varying vec2 vUvTo;
+
+
         void main() {
-    
-            ${indexTarget}
-            ${toTarget}
-            
-            vUvFrom =
-            ${vUvFrom}
-    
-            vUvTo =
-            ${vUvTo}
-    
-            vec3 positionFrom =
-            ${positionFrom}
-    
-            vec3 positionTo=
-            ${positionTo}
-    
+
+            vUvFrom = uvFrom;
+            vUvTo = uvTo;
+                
             vec3 endPostion = mix(positionFrom, positionTo, mod(progress, 1.) );
-            
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(endPostion.xy, 0, 1);
+                
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(endPostion.xy, 0., 1.);
         }
     `;
 }
@@ -347,7 +359,7 @@ function generateShader() {
             tMapTo: { value: texturesArr[1] },
             progress: { value: 0.001 }
         },
-        transparent: false,
+        transparent: true,
         cullFace: null,
         depthWrite: false,
     });
@@ -365,7 +377,7 @@ function createMesh(text){
         texts[index] = new Text({
             font: fontData[index],
             text: text,
-            width: 10,
+            width: 10000,
             align: 'left',
             letterSpacing: 0,
             size: fontSize,
@@ -397,7 +409,7 @@ function createMesh(text){
 function startApp(){
     setEvents();
 
-    TweenMax.to(time, 6, { val: fontData.length-1, yoyo: true, repeat: -1, ease: Power0.easeNone } )
+    TweenMax.to(time, 4, { val: fontData.length-1, yoyo: true, repeat: -1, ease: Power0.easeNone } )
 
     requestAnimationFrame(update);
 }
@@ -418,7 +430,7 @@ function update(t) {
     meshArray[0].program.uniforms.progress.value = time.val;
 
     if (currentStep !== nbr) {
-        console.log("======= INTO =======");
+
         for (let index = 0; index < meshArray.length; index++) {
             meshArray[index].program.uniforms.tMapFrom.value = texturesArr[nbr];
             meshArray[index].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
@@ -429,7 +441,6 @@ function update(t) {
             meshArray[index].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
             meshArray[index].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
 
-            console.log(meshArray[index].geometry.attributes.positionFrom.target);
             meshArray[index].geometry.attributes.positionFrom.needsUpdate = true;
             meshArray[index].geometry.attributes.positionTo.needsUpdate = true;
             meshArray[index].geometry.attributes.uvFrom.needsUpdate = true;
@@ -475,12 +486,33 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`WWW`),
-        createMesh(`III`)]; 
+        meshArray = [createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
+        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),];
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];
-            element.position.set(600, 1500 -window.innerHeight - (2*lineHeightPos*(index+1) ), 0 );
+            element.position.set(0,  -(lineHeightPos*(index) ), 0 );
         }
         startApp();
         initRaycast();
