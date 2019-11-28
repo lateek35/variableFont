@@ -6,40 +6,20 @@ import { Text, Raycast } from './ogl/Extras.js';
 
 
 let typos = [
-    "a6",
-    "a5",
-    "a4",
-    "a3",
-    "a2",
-    "a1",
-    "a0",
     "0",
     "1",
     "2",
     "3",
     "4",
     "5",
-    "6",
-    "5",
-    "4",
-    "3",
-    "2",
-    "1",
-    "0",
-    "00",
-    "11",
-    "22",
-    "33",
-    "44",
-    "55",
-    "66",
+    "6"
 ]
 
 let baseSource = 'public/gotik4/';
-let fontSize = 50;
+let fontSize = 150;
 let lineHeight = 0.9;
 let lineHeightPos = fontSize * 1;
-let webGL2 = false;
+let webGL2 = true;
 let currentStep = 0;
 // RETREIVE NUMBER OF VARIATIONS DURING TRANSITION;
 let typosLength = typos.length; 
@@ -409,7 +389,7 @@ function createMesh(text){
 function startApp(){
     setEvents();
 
-    TweenMax.to(time, 4, { val: fontData.length-1, yoyo: true, repeat: -1, ease: Power0.easeNone } )
+    TweenMax.to(time, 3, { val: fontData.length - 1.001, yoyo: true, repeat: -1, repeatDelay: 1, ease: Power1.easeInOut } )
 
     requestAnimationFrame(update);
 }
@@ -426,6 +406,8 @@ function setEvents(){
 function update(t) {
 
     let nbr = Math.floor(time.val);
+
+    if ( (nbr+1) >= texturesArr.length ) return;
 
     meshArray[0].program.uniforms.progress.value = time.val;
 
@@ -486,29 +468,8 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),
-        createMesh(`0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-:,!`),];
+        meshArray = [createMesh(`DANIEL
+        ASKILL`)];
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];
