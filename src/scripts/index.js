@@ -29,7 +29,7 @@ let typos = [
 ]
 
 let baseSource = 'public/gotik3/';
-let fontSize = 200;
+let fontSize = 130;
 let lineHeight = 1;
 let lineHeightPos = fontSize * 1;
 let webGL2 = true;
@@ -369,7 +369,7 @@ function createMesh(text){
         texts[index] = new Text({
             font: fontData[index],
             text: text,
-            width: 10,
+            width: 10000000,
             align: 'left',
             letterSpacing: 0,
             size: fontSize,
@@ -488,13 +488,21 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`DANIEL
-        ASKIL`), createMesh(`BEN
-        BRIAND`)]; 
+        meshArray = [
+            createMesh(`LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT`), 
+            createMesh(`JIVED FOX NYMPH GRABS QUICK WALTZ`),
+            createMesh(`LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT`),
+            createMesh(`JIVED FOX NYMPH GRABS QUICK WALTZ`),
+            createMesh(`LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT`),
+            createMesh(`JIVED FOX NYMPH GRABS QUICK WALTZ`),
+            createMesh(`LOREM IPSUM DOLOR SIT AMET CONSECTETUR ADIPISCING ELIT`),
+            createMesh(`JIVED FOX NYMPH GRABS QUICK WALTZ`)
+        ];
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];
-            element.position.set(600, 1500 -window.innerHeight - (2*lineHeightPos*(index+1) ), 0 );
+            element.position.set(0, -lineHeightPos * index, 0 );
+            // element.position.set(0,0 -window.innerHeight - (lineHeightPos*(index+1) ), 0 );
         }
         startApp();
         initRaycast();
@@ -510,7 +518,7 @@ function initRaycast() {
 
 
     // for (let index = 0; index < meshArray.length; index++) {
-    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 5 * 1, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 0.1, ease: Power2.easeInOut });
+    TweenMax.to(meshArray[meshArray.length - 1], typosLength / 8 * 1, { progress: 0.999, yoyo: true, repeat: -1, repeatDelay: 0.1, ease: Power2.easeInOut });
     // }
     
     // function move(e) {
