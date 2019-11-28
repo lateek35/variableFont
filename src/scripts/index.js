@@ -215,7 +215,7 @@ var vertex100;
             // vec3 texTo = texture(tMapTo, vUvTo).rgb;
             // float alpha = aastep(mix( texFrom.r, texTo.r, mod(progress, 1.) ));
             
-            FragColor = vec4(vec3(1.),  alpha);
+            FragColor = vec4(vec3(1., alpha, alpha),  alpha);
         }
     `;
     
@@ -347,7 +347,7 @@ function generateShader() {
             tMapTo: { value: texturesArr[1] },
             progress: { value: 0.001 }
         },
-        transparent: true,
+        transparent: false,
         cullFace: null,
         depthWrite: false,
     });
@@ -423,14 +423,13 @@ function update(t) {
             meshArray[index].program.uniforms.tMapFrom.value = texturesArr[nbr];
             meshArray[index].program.uniforms.tMapTo.value = texturesArr[(nbr + 1)];
 
-            
             meshArray[index].geometry.attributes.positionFrom.data = texts[nbr].buffers.position;
             meshArray[index].geometry.attributes.positionTo.data = texts[(nbr + 1)].buffers.position;
-
             
             meshArray[index].geometry.attributes.uvFrom.data = texts[nbr].buffers.uv;
             meshArray[index].geometry.attributes.uvTo.data = texts[(nbr + 1)].buffers.uv;
 
+            console.log(meshArray[index].geometry.attributes.positionFrom.target);
             meshArray[index].geometry.attributes.positionFrom.needsUpdate = true;
             meshArray[index].geometry.attributes.positionTo.needsUpdate = true;
             meshArray[index].geometry.attributes.uvFrom.needsUpdate = true;
@@ -476,12 +475,8 @@ function checkIfDataLoaded() {
     dataLoaded++;
     if (dataLoaded == 2) {
         program = generateShader();
-        meshArray = [createMesh(`ABC
-        DEF`),
-        createMesh(`HJI
-        IOP`),
-        createMesh(`WEB
-        NOP`)]; 
+        meshArray = [createMesh(`WWW`),
+        createMesh(`III`)]; 
 
         for (let index = 0; index < meshArray.length; index++) {
             const element = meshArray[index];
