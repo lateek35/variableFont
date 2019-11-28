@@ -427,6 +427,8 @@ function update(t) {
 
     let nbr = Math.floor(time.val);
 
+    if ((nbr + 1) >= texturesArr.length) return;
+
     meshArray[0].program.uniforms.progress.value = time.val;
 
     if (currentStep !== nbr) {
